@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"go-chat-app/internal/db"
 	"go-chat-app/internal/handlers"
@@ -20,8 +21,14 @@ func main() {
 	http.HandleFunc("/ws", handlers.ChatWebSocketHandler)
 	http.Handle("/", http.FileServer(http.Dir("./web/frontend/build")))
 
-	log.Println("🚀 Server running on :8080")
-	err := http.ListenAndServe(":8080", nil)
+	// 🔥 FIX: use dynamic port for Render
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080" // fallback for local
+	}
+
+	log.Println("🚀 Server running on port:", port)
+	err := http.ListenAndServe(":"+port, nil)
 	if err != nil {
 		log.Fatal("Server failed:", err)
 	}

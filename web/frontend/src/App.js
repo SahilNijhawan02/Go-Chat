@@ -26,6 +26,7 @@ function App() {
     socket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+        console.log("WS incoming:", data);
         setMessages((prev) => [...prev, data]);
       } catch (e) {
         console.log("JSON parse error:", e);
@@ -56,6 +57,15 @@ function App() {
 
     const message = input;
 
+    // Optimistic UI: show the message locally immediately
+    const localMsg = {
+      user: username,
+      content: message,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    setMessages((prev) => [...prev, localMsg]);
+
     if (!wsRef.current) {
       console.log("Socket not initialized");
       setInput("");
@@ -65,6 +75,7 @@ function App() {
     const ws = wsRef.current;
 
     if (ws.readyState === WebSocket.OPEN) {
+      console.log("WS send:", message);
       ws.send(message);
       setInput("");
       return;
@@ -81,11 +92,15 @@ function App() {
     };
 
     if (ws.addEventListener) {
-      ws.addEventListener("open", onOpen, { once: true });
+      ws.addEventListener("open", () => {
+        console.log("WS opened, sending queued message");
+        onOpen();
+      }, { once: true });
     } else {
       const prev = ws.onopen;
       ws.onopen = (ev) => {
         if (prev) prev(ev);
+        console.log("WS opened (onopen), sending queued message");
         onOpen();
       };
     }
