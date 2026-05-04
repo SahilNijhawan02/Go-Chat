@@ -10,20 +10,26 @@ function App() {
 
   const bottomRef = useRef(null);
 
+  // 🔌 WebSocket setup
   useEffect(() => {
     if (!joined) return;
 
     const socket = new WebSocket("wss://go-chat.onrender.com/ws");
 
+    wsRef.current = socket; // ✅ assign immediately
+
     socket.onopen = () => {
       console.log("CONNECTED");
-      wsRef.current = socket; // ✅ assign AFTER open
-      socket.send(username);
+      socket.send(username); // send username first
     };
 
     socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      setMessages((prev) => [...prev, data]);
+      try {
+        const data = JSON.parse(event.data);
+        setMessages((prev) => [...prev, data]);
+      } catch (e) {
+        console.log("JSON parse error:", e);
+      }
     };
 
     socket.onerror = (err) => {
@@ -34,16 +40,19 @@ function App() {
       console.log("Socket closed");
     };
 
-    return () => socket.close();
-  }, [joined, username]);
+    return () => {
+      socket.close();
+    };
+  }, [joined]); // ✅ only depends on joined
 
-  // Auto scroll
+  // 📜 Auto scroll
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // 📤 Send message
   const sendMessage = () => {
-    if (!wsRef.current) {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
       console.log("Socket not ready");
       return;
     }
@@ -51,7 +60,7 @@ function App() {
     if (input.trim() === "") return;
 
     wsRef.current.send(input);
-    setInput(""); // ✅ FIXED (clears textbox)
+    setInput(""); // clear input
   };
 
   // 🔐 JOIN SCREEN
