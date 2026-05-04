@@ -52,15 +52,45 @@ function App() {
 
   // 📤 Send message
   const sendMessage = () => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-      console.log("Socket not ready");
+    if (input.trim() === "") return;
+
+    const message = input;
+
+    if (!wsRef.current) {
+      console.log("Socket not initialized");
+      setInput("");
       return;
     }
 
-    if (input.trim() === "") return;
+    const ws = wsRef.current;
 
-    wsRef.current.send(input);
-    setInput(""); // clear input
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(message);
+      setInput("");
+      return;
+    }
+
+    // If socket not open yet, queue the message to send once it opens
+    console.log("Socket not open yet; queuing message");
+    const onOpen = () => {
+      try {
+        ws.send(message);
+      } catch (e) {
+        console.log("Send after open failed:", e);
+      }
+    };
+
+    if (ws.addEventListener) {
+      ws.addEventListener("open", onOpen, { once: true });
+    } else {
+      const prev = ws.onopen;
+      ws.onopen = (ev) => {
+        if (prev) prev(ev);
+        onOpen();
+      };
+    }
+
+    setInput("");
   };
 
   // 🔐 JOIN SCREEN
