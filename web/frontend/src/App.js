@@ -16,11 +16,11 @@ function App() {
 
     const socket = new WebSocket("wss://go-chat-h1jw.onrender.com/ws");
 
-    wsRef.current = socket; // ✅ assign immediately
+    wsRef.current = socket;
 
     socket.onopen = () => {
       console.log("CONNECTED");
-      socket.send(username); // send username first
+      socket.send(username);
     };
 
     socket.onmessage = (event) => {
@@ -41,10 +41,8 @@ function App() {
       console.log("Socket closed");
     };
 
-    return () => {
-      socket.close();
-    };
-  }, [joined]); // ✅ only depends on joined
+    return () => socket.close();
+  }, [joined]);
 
   // 📜 Auto scroll
   useEffect(() => {
@@ -55,55 +53,33 @@ function App() {
   const sendMessage = () => {
     if (input.trim() === "") return;
 
-    const message = input;
-
-    // Optimistic UI: show the message locally immediately
-    const localMsg = {
-      user: username,
-      content: message,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
-
-    setMessages((prev) => [...prev, localMsg]);
-
     if (!wsRef.current) {
       console.log("Socket not initialized");
-      setInput("");
       return;
     }
 
     const ws = wsRef.current;
 
     if (ws.readyState === WebSocket.OPEN) {
-      console.log("WS send:", message);
-      ws.send(message);
+      console.log("WS send:", input);
+      ws.send(input);
       setInput("");
       return;
     }
 
-    // If socket not open yet, queue the message to send once it opens
-    console.log("Socket not open yet; queuing message");
-    const onOpen = () => {
-      try {
-        ws.send(message);
-      } catch (e) {
-        console.log("Send after open failed:", e);
-      }
-    };
+    console.log("Socket not open yet, retrying...");
 
-    if (ws.addEventListener) {
-      ws.addEventListener("open", () => {
-        console.log("WS opened, sending queued message");
-        onOpen();
-      }, { once: true });
-    } else {
-      const prev = ws.onopen;
-      ws.onopen = (ev) => {
-        if (prev) prev(ev);
-        console.log("WS opened (onopen), sending queued message");
-        onOpen();
-      };
-    }
+    ws.addEventListener(
+      "open",
+      () => {
+        try {
+          ws.send(input);
+        } catch (e) {
+          console.log("Send after open failed:", e);
+        }
+      },
+      { once: true }
+    );
 
     setInput("");
   };
@@ -147,7 +123,6 @@ function App() {
   // 💬 CHAT UI
   return (
     <div className="h-screen flex flex-col bg-black text-white">
-
       {/* HEADER */}
       <div className="flex justify-between items-center px-6 py-4 border-b border-gray-800">
         <div className="text-lg font-semibold">GoChat</div>

@@ -15,6 +15,7 @@ func main() {
 	db.Init()
 
 	// Start message broadcaster
+	log.Println("HandleMessages started")
 	go ws.HandleMessages()
 
 	// Routes
