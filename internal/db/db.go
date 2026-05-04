@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"log"
+	"os"
 
 	_ "github.com/lib/pq"
 )
@@ -10,7 +11,7 @@ import (
 var DB *sql.DB
 
 func Init() {
-	connStr := "host=127.0.0.1 port=6000 user=postgres password=Sahil@777 dbname=chat_app sslmode=disable"
+	connStr := os.Getenv("DATABASE_URL")
 
 	var err error
 	DB, err = sql.Open("postgres", connStr)
