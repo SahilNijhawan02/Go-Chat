@@ -13,7 +13,7 @@ function App() {
   useEffect(() => {
     if (!joined) return;
 
-    const socket = new WebSocket("wss://Go-Chat.onrender.com/ws");
+    const socket = new WebSocket("wss://go-chat.onrender.com/ws");
     socket.onopen = () => {
       socket.send(username);
     };
