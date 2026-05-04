@@ -18,6 +18,7 @@ func main() {
 
 	// Routes
 	http.HandleFunc("/ws", handlers.ChatWebSocketHandler)
+	http.Handle("/", http.FileServer(http.Dir("./web/frontend/build")))
 
 	log.Println("🚀 Server running on :8080")
 	err := http.ListenAndServe(":8080", nil)
