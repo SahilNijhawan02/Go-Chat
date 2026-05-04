@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 function App() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-  const [ws, setWs] = useState(null);
+  const wsRef = useRef(null);
 
   const [username, setUsername] = useState("");
   const [joined, setJoined] = useState(false);
@@ -23,7 +23,7 @@ function App() {
       setMessages((prev) => [...prev, data]);
     };
 
-    setWs(socket);
+    wsRef.current = socket;
 
     return () => socket.close();
   }, [joined, username]);
@@ -34,10 +34,9 @@ function App() {
   }, [messages]);
 
   const sendMessage = () => {
-    if (ws && input.trim() !== "") {
-      ws.send(input);
-      setInput("");
-    }
+    if (wsRef.current && input.trim() !== "") {
+  wsRef.current.send(input);
+}
   };
 
   // 🔐 JOIN SCREEN
