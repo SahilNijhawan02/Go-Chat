@@ -14,7 +14,7 @@ function App() {
   useEffect(() => {
     if (!joined) return;
 
-    const socket = new WebSocket("wss://go-chat.onrender.com/ws");
+    const socket = new WebSocket("wss://go-chat-h1jw.onrender.com/ws");
 
     wsRef.current = socket; // ✅ assign immediately
 
