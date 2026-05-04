@@ -14,7 +14,10 @@ function App() {
     if (!joined) return;
 
     const socket = new WebSocket("wss://go-chat.onrender.com/ws");
+
     socket.onopen = () => {
+      console.log("CONNECTED");
+      wsRef.current = socket; // ✅ assign AFTER open
       socket.send(username);
     };
 
@@ -23,7 +26,13 @@ function App() {
       setMessages((prev) => [...prev, data]);
     };
 
-    wsRef.current = socket;
+    socket.onerror = (err) => {
+      console.log("Socket error:", err);
+    };
+
+    socket.onclose = () => {
+      console.log("Socket closed");
+    };
 
     return () => socket.close();
   }, [joined, username]);
@@ -34,21 +43,25 @@ function App() {
   }, [messages]);
 
   const sendMessage = () => {
-    if (wsRef.current && input.trim() !== "") {
-  wsRef.current.send(input);
-}
+    if (!wsRef.current) {
+      console.log("Socket not ready");
+      return;
+    }
+
+    if (input.trim() === "") return;
+
+    wsRef.current.send(input);
+    setInput(""); // ✅ FIXED (clears textbox)
   };
 
   // 🔐 JOIN SCREEN
   if (!joined) {
     return (
       <div className="h-screen flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-gray-800 text-white relative overflow-hidden">
-        
         <div className="absolute w-96 h-96 bg-blue-500 opacity-20 blur-3xl rounded-full top-10 left-10"></div>
         <div className="absolute w-96 h-96 bg-purple-500 opacity-20 blur-3xl rounded-full bottom-10 right-10"></div>
 
         <div className="relative backdrop-blur-lg bg-white/5 border border-white/10 p-10 rounded-3xl shadow-2xl w-80">
-
           <h1 className="text-3xl font-bold text-center mb-2">
             Welcome 👋
           </h1>
@@ -65,14 +78,13 @@ function App() {
           />
 
           <button
-            className="w-full bg-blue-500 hover:bg-blue-600 p-3 rounded-xl font-semibold transition transform hover:scale-[1.02] active:scale-[0.98]"
+            className="w-full bg-blue-500 hover:bg-blue-600 p-3 rounded-xl font-semibold transition"
             onClick={() => {
               if (username.trim()) setJoined(true);
             }}
           >
             Join Chat
           </button>
-
         </div>
       </div>
     );
@@ -100,7 +112,6 @@ function App() {
                 isMe ? "items-end" : "items-start"
               }`}
             >
-              {/* ✅ FIXED HERE */}
               <span className="text-xs text-gray-500 mb-1">
                 {msg.user} • {msg.time}
               </span>
@@ -131,7 +142,7 @@ function App() {
         />
 
         <button
-          className="bg-blue-600 hover:bg-blue-700 px-5 rounded-xl font-medium transition"
+          className="bg-blue-600 hover:bg-blue-700 px-5 rounded-xl font-medium"
           onClick={sendMessage}
         >
           Send
